@@ -1,6 +1,5 @@
 # Virtual Biopsy System - Shiny webapp
-# Derived from the public Synapse models associated with:
-# Yoo et al. A Machine Learning-Driven Virtual Biopsy System For Kidney Transplant Patients.
+# Hotfix: lazy model loading for Render/free instances.
 
 source("R/prediction.R")
 
@@ -47,16 +46,25 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  models <- load_virtual_biopsy_models("models")
-
   values <- eventReactive(input$run, {
-    donor <- donor_from_input(input)
-    predict_virtual_biopsy(models, donor)
-  }, ignoreInit = FALSE)
+    withProgress(message = "Cargando modelos y calculando...", value = 0, {
+      incProgress(0.2, detail = "Preparando datos")
+      donor <- donor_from_input(input)
+      incProgress(0.4, detail = "Cargando modelos")
+      models <- get_virtual_biopsy_models("models")
+      incProgress(0.8, detail = "Generando predicción")
+      predict_virtual_biopsy(models, donor)
+    })
+  }, ignoreInit = TRUE)
 
   output$status <- renderUI({
-    res <- values()
-    if (!is.null(res$warnings) && length(res$warnings) > 0) {
+    if (input$run == 0) {
+      return(div(class = "ok-box", "App cargada. Introduce los datos del donante y pulsa 'Calcular biopsia virtual'. La primera predicción puede tardar porque Render descarga/carga los modelos."))
+    }
+    res <- tryCatch(values(), error = function(e) e)
+    if (inherits(res, "error")) {
+      div(class = "warning-box", strong("Error: "), conditionMessage(res))
+    } else if (!is.null(res$warnings) && length(res$warnings) > 0) {
       div(class = "warning-box", strong("Avisos: "), tags$ul(lapply(res$warnings, tags$li)))
     } else {
       div(class = "ok-box", "Modelo cargado y predicción generada correctamente.")
@@ -64,22 +72,30 @@ server <- function(input, output, session) {
   })
 
   output$prob_table <- renderTable({
+    req(input$run > 0)
     res <- values()
+    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
     format_probability_table(res)
   }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
 
   output$summary_table <- renderTable({
+    req(input$run > 0)
     res <- values()
+    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
     format_summary_table(res)
   }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
 
   output$radar_plot <- renderPlot({
+    req(input$run > 0)
     res <- values()
+    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
     plot_virtual_biopsy_radar(res)
   })
 
   output$clinical_note <- renderUI({
+    req(input$run > 0)
     res <- values()
+    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
     HTML(make_clinical_note(res))
   })
 }

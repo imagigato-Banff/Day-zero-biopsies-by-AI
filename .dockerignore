@@ -1,0 +1,7 @@
+.git
+.github
+README_images
+*.zip
+.Rhistory
+.RData
+.Rproj.user

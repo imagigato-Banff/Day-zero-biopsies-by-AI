@@ -1,33 +1,39 @@
-# Virtual Biopsy Webapp
+# Virtual Biopsy System - Shiny Webapp
 
-Aplicación R Shiny para estimar hallazgos histológicos de biopsia día-cero en trasplante renal usando los modelos públicos asociados al estudio de Yoo et al.
+Webapp R Shiny para desplegar el sistema de biopsia virtual renal.
 
-## Estructura
+## Archivos principales
 
-- `app.R`: aplicación Shiny.
-- `R/prediction.R`: carga de modelos y funciones de predicción.
-- `models/parts/`: modelos `.rds` divididos en partes de menos de 25 MB para poder subirlos desde la web de GitHub sin instalar Git ni GitHub Desktop.
-- `Dockerfile`: despliegue en Render u otros servicios Docker.
+- `app.R`: interfaz Shiny.
+- `R/prediction.R`: carga de modelos y predicción.
+- `Dockerfile`: despliegue en Render.
 - `render.yaml`: configuración para Render.
-- `www/style.css`: estilos.
 
-## Nota importante sobre los modelos
+## Modelos
 
-GitHub no permite subir desde navegador archivos individuales mayores de 25 MB. Por eso los modelos están divididos en partes `.part000`, `.part001`, etc.
+Los modelos `.rds` no van dentro del repositorio porque GitHub no permite subir archivos grandes desde la web.
 
-No hay que unirlos manualmente. La aplicación los reconstruye automáticamente en el servidor cuando arranca.
+Sube estos 4 archivos como **GitHub Release assets** con el tag `models-v1`:
 
-## Despliegue recomendado: Render
+- `cv_finalround_list_forSynapse.rds`
+- `ah_finalround_list_forSynapse.rds`
+- `IFTA_finalround_list_forSynapse.rds`
+- `Glo_finalround_list_forSynapse.rds`
 
-1. Sube todos los archivos y carpetas de este proyecto a un repositorio GitHub.
-2. En Render crea un nuevo **Web Service**.
-3. Conecta el repositorio.
-4. Elige **Docker**.
-5. Deja Root Directory vacío.
-6. Haz clic en **Create Web Service**.
+En Render añade esta variable de entorno:
 
-La aplicación escuchará en el puerto 3838 mediante `rocker/shiny`.
+```text
+MODEL_BASE_URL=https://github.com/TU_USUARIO/TU_REPO/releases/download/models-v1
+```
 
-## Limitación clínica
+Ejemplo:
 
-Uso orientativo/investigacional. No sustituye la valoración clínica ni una biopsia indicada.
+```text
+MODEL_BASE_URL=https://github.com/imaggigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1
+```
+
+La app descargará los modelos automáticamente al arrancar.
+
+## Nota
+
+GitHub Pages no sirve para Shiny. Usar Render como Web Service con Docker.
