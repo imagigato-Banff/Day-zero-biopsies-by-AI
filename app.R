@@ -1,5 +1,5 @@
 # Sistema de biopsia virtual - aplicación Shiny
-# HOTFIX11: castellano, diagnóstico robusto y modelos descargados en Docker.
+# HOTFIX12: corrige cierre del servidor Shiny y mantiene modelos integrados en Docker.
 
 options(shiny.sanitize.errors = FALSE)
 tryCatch({
@@ -8,7 +8,7 @@ tryCatch({
   stop("No se pudo cargar R/prediction.R: ", conditionMessage(e))
 })
 
-VERSION_APP <- "HOTFIX11 castellano definitivo"
+VERSION_APP <- "HOTFIX12 castellano definitivo"
 
 ui <- fluidPage(
   tags$head(
@@ -122,5 +122,7 @@ server <- function(input, output, session) {
       sep = "\n"
     )
   })
+
+}
 
 shinyApp(ui, server)

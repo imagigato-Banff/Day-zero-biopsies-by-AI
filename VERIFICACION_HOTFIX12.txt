@@ -1,0 +1,1 @@
+HOTFIX12: app.R con server cerrado correctamente; VERSION_APP HOTFIX12; Dockerfile mantiene URL correcta imagigato-Banff.

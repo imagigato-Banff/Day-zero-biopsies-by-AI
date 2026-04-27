@@ -1,20 +1,23 @@
-# Sistema de biopsia virtual — HOTFIX9
+# Sistema de biopsia virtual — HOTFIX12
 
-Aplicación Shiny en castellano para el sistema de biopsia virtual renal.
+Aplicación Shiny en castellano.
 
-## Qué cambia esta versión
+## Corrección clave
 
-- La interfaz está en castellano.
-- Los modelos `.rds` se descargan durante la construcción de la imagen Docker desde la Release `models-v1`.
-- La app incluye una pestaña **Diagnóstico técnico** para comprobar si los modelos están presentes.
+HOTFIX12 corrige el cierre de la función `server` en `app.R`. El despliegue anterior podía quedar en Render con:
 
-## Qué debes ver en Render
+`The application exited during initialization`
 
-Durante la construcción, en los logs deben aparecer líneas de `curl` descargando estos cuatro modelos:
+porque `app.R` estaba incompleto.
 
-- `cv_finalround_list_forSynapse.rds`
-- `ah_finalround_list_forSynapse.rds`
-- `IFTA_finalround_list_forSynapse.rds`
-- `Glo_finalround_list_forSynapse.rds`
+## Modelos
 
-Si esas líneas no aparecen, Render no está usando el Dockerfile nuevo.
+Los 4 modelos `.rds` se descargan durante la construcción Docker desde:
+
+`https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1`
+
+## Verificación
+
+Al abrir la app debe verse:
+
+`Versión activa: HOTFIX12 castellano definitivo`
