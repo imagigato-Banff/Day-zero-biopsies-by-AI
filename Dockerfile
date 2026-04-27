@@ -10,7 +10,7 @@ COPY . /srv/shiny-server/
 
 # Descarga de modelos en tiempo de construcción. No depende de variables de Render.
 RUN set -eux; \
-    MODEL_BASE_URL='https://github.com/imaggigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1'; \
+    MODEL_BASE_URL='https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1'; \
     mkdir -p /srv/shiny-server/models; \
     for f in \
       cv_finalround_list_forSynapse.rds \
