@@ -1,5 +1,5 @@
 # Sistema de biopsia virtual - aplicación Shiny
-# HOTFIX10: castellano, diagnóstico robusto y modelos descargados en Docker.
+# HOTFIX11: castellano, diagnóstico robusto y modelos descargados en Docker.
 
 options(shiny.sanitize.errors = FALSE)
 tryCatch({
@@ -8,7 +8,7 @@ tryCatch({
   stop("No se pudo cargar R/prediction.R: ", conditionMessage(e))
 })
 
-VERSION_APP <- "HOTFIX10 castellano definitivo"
+VERSION_APP <- "HOTFIX11 castellano definitivo"
 
 ui <- fluidPage(
   tags$head(
@@ -97,15 +97,23 @@ server <- function(input, output, session) {
   output$clinical_note <- renderUI({ req(!is.null(resultado())); HTML(make_clinical_note(resultado())) })
 
   output$diagnostico <- renderText({
-    reqs <- c(cv = "cv_finalround_list_forSynapse.rds", ah = "ah_finalround_list_forSynapse.rds", ifta = "IFTA_finalround_list_forSynapse.rds", glo = "Glo_finalround_list_forSynapse.rds")
-    paths <- setNames(file.path("models", unname(reqs)), names(reqs))
+    reqs <- c(
+      "cv_finalround_list_forSynapse.rds",
+      "ah_finalround_list_forSynapse.rds",
+      "IFTA_finalround_list_forSynapse.rds",
+      "Glo_finalround_list_forSynapse.rds"
+    )
+    paths <- file.path("models", reqs)
     estado <- vapply(paths, function(x) {
-      if (file.exists(x)) paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB") else paste0("FALTA — ", basename(x))
+      if (file.exists(x)) {
+        paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB")
+      } else {
+        paste0("FALTA — ", basename(x))
+      }
     }, character(1))
     paste(
       paste("Versión activa:", VERSION_APP),
-      paste("URL correcta esperada:", "https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1"),
-      paste("URL configurada de modelos:", tryCatch(get_model_base_url(), error = function(e) paste("ERROR:", conditionMessage(e)))),
+      paste("URL de modelos integrada:", "https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1"),
       paste("Directorio de trabajo:", getwd()),
       paste("Carpeta models presente:", dir.exists("models")),
       "Estado de los modelos:",
@@ -114,6 +122,5 @@ server <- function(input, output, session) {
       sep = "\n"
     )
   })
-}
 
 shinyApp(ui, server)

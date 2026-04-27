@@ -1,0 +1,1 @@
+HOTFIX11 verificado: app.R y R/prediction.R actualizados; diagnóstico sin get_model_base_url; collect_train_models robusto; Dockerfile con imagigato-Banff.
