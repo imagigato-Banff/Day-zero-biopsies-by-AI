@@ -1,0 +1,5 @@
+HOTFIX10
+Repositorio correcto: imagigato-Banff/Day-zero-biopsies-by-AI
+URL correcta de modelos:
+https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1
+Debe verse en la app: Versión activa: HOTFIX10 castellano definitivo

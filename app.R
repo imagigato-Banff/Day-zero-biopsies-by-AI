@@ -1,10 +1,14 @@
 # Sistema de biopsia virtual - aplicación Shiny
-# HOTFIX7: castellano, diagnóstico claro y modelos descargados en Docker.
+# HOTFIX10: castellano, diagnóstico robusto y modelos descargados en Docker.
 
 options(shiny.sanitize.errors = FALSE)
-source("R/prediction.R")
+tryCatch({
+  source("R/prediction.R", local = FALSE)
+}, error = function(e) {
+  stop("No se pudo cargar R/prediction.R: ", conditionMessage(e))
+})
 
-VERSION_APP <- "HOTFIX7 castellano con modelos integrados en Docker"
+VERSION_APP <- "HOTFIX10 castellano definitivo"
 
 ui <- fluidPage(
   tags$head(
@@ -77,12 +81,8 @@ server <- function(input, output, session) {
   })
 
   output$status <- renderUI({
-    if (!is.null(error_calc())) {
-      return(div(class = "warning-box", strong("Error: "), error_calc()))
-    }
-    if (is.null(resultado())) {
-      return(div(class = "ok-box", "Aplicación cargada. Introduce los datos del donante y pulsa ‘Calcular biopsia virtual’."))
-    }
+    if (!is.null(error_calc())) return(div(class = "warning-box", strong("Error: "), error_calc()))
+    if (is.null(resultado())) return(div(class = "ok-box", "Aplicación cargada. Introduce los datos del donante y pulsa ‘Calcular biopsia virtual’."))
     res <- resultado()
     if (!is.null(res$warnings) && length(res$warnings) > 0) {
       div(class = "warning-box", strong("Avisos: "), tags$ul(lapply(res$warnings, tags$li)))
@@ -91,39 +91,21 @@ server <- function(input, output, session) {
     }
   })
 
-  output$prob_table <- renderTable({
-    req(!is.null(resultado()))
-    format_probability_table(resultado())
-  }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
-
-  output$summary_table <- renderTable({
-    req(!is.null(resultado()))
-    format_summary_table(resultado())
-  }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
-
-  output$radar_plot <- renderPlot({
-    req(!is.null(resultado()))
-    plot_virtual_biopsy_radar(resultado())
-  })
-
-  output$clinical_note <- renderUI({
-    req(!is.null(resultado()))
-    HTML(make_clinical_note(resultado()))
-  })
+  output$prob_table <- renderTable({ req(!is.null(resultado())); format_probability_table(resultado()) }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
+  output$summary_table <- renderTable({ req(!is.null(resultado())); format_summary_table(resultado()) }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
+  output$radar_plot <- renderPlot({ req(!is.null(resultado())); plot_virtual_biopsy_radar(resultado()) })
+  output$clinical_note <- renderUI({ req(!is.null(resultado())); HTML(make_clinical_note(resultado())) })
 
   output$diagnostico <- renderText({
-    reqs <- required_model_files()
-    paths <- file.path("models", reqs)
+    reqs <- c(cv = "cv_finalround_list_forSynapse.rds", ah = "ah_finalround_list_forSynapse.rds", ifta = "IFTA_finalround_list_forSynapse.rds", glo = "Glo_finalround_list_forSynapse.rds")
+    paths <- setNames(file.path("models", unname(reqs)), names(reqs))
     estado <- vapply(paths, function(x) {
-      if (file.exists(x)) {
-        paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB")
-      } else {
-        paste0("FALTA — ", basename(x))
-      }
+      if (file.exists(x)) paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB") else paste0("FALTA — ", basename(x))
     }, character(1))
     paste(
       paste("Versión activa:", VERSION_APP),
-      paste("URL configurada de modelos:", get_model_base_url()),
+      paste("URL correcta esperada:", "https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1"),
+      paste("URL configurada de modelos:", tryCatch(get_model_base_url(), error = function(e) paste("ERROR:", conditionMessage(e)))),
       paste("Directorio de trabajo:", getwd()),
       paste("Carpeta models presente:", dir.exists("models")),
       "Estado de los modelos:",
