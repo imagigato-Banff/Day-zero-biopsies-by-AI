@@ -1,0 +1,3 @@
+HOTFIX13 castellano estable
+URL correcta: https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1
+
