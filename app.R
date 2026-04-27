@@ -1,5 +1,5 @@
 # Virtual Biopsy System - Shiny webapp
-# Hotfix: lazy model loading for Render/free instances.
+# Hotfix 2: lazy model loading + corrected function name for model loader.
 
 source("R/prediction.R")
 
@@ -51,7 +51,7 @@ server <- function(input, output, session) {
       incProgress(0.2, detail = "Preparando datos")
       donor <- donor_from_input(input)
       incProgress(0.4, detail = "Cargando modelos")
-      models <- get_virtual_biopsy_models("models")
+      models <- load_virtual_biopsy_models("models")
       incProgress(0.8, detail = "Generando predicción")
       predict_virtual_biopsy(models, donor)
     })
