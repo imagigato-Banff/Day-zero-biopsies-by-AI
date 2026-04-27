@@ -2,6 +2,5 @@ services:
   - type: web
     name: virtual-biopsy-system
     env: docker
-    plan: starter
     autoDeploy: true
     healthCheckPath: /

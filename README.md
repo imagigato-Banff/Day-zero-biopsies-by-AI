@@ -1,22 +1,20 @@
-# Sistema de biopsia virtual
+# Sistema de biopsia virtual — HOTFIX7
 
-Aplicación Shiny en castellano para estimar de forma orientativa hallazgos de biopsia día cero en trasplante renal a partir de variables básicas del donante.
+Aplicación Shiny en castellano para el sistema de biopsia virtual renal.
 
-## Despliegue en Render
+## Qué cambia esta versión
 
-La aplicación descarga los modelos desde esta Release de GitHub:
+- La interfaz está en castellano.
+- Los modelos `.rds` se descargan durante la construcción de la imagen Docker desde la Release `models-v1`.
+- La app incluye una pestaña **Diagnóstico técnico** para comprobar si los modelos están presentes.
 
-https://github.com/imaggigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1
+## Qué debes ver en Render
 
-La variable `MODEL_BASE_URL` es opcional. Si no existe, la aplicación usa esa URL por defecto.
-
-## Archivos esperados en la Release `models-v1`
+Durante la construcción, en los logs deben aparecer líneas de `curl` descargando estos cuatro modelos:
 
 - `cv_finalround_list_forSynapse.rds`
 - `ah_finalround_list_forSynapse.rds`
 - `IFTA_finalround_list_forSynapse.rds`
 - `Glo_finalround_list_forSynapse.rds`
 
-## Nota clínica
-
-Uso orientativo/investigacional. No sustituye la valoración clínica ni una biopsia indicada.
+Si esas líneas no aparecen, Render no está usando el Dockerfile nuevo.

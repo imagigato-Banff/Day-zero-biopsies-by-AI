@@ -1,9 +1,10 @@
 # Sistema de biopsia virtual - aplicación Shiny
-# Versión HOTFIX6: interfaz en castellano y descarga directa de modelos desde GitHub Releases.
+# HOTFIX7: castellano, diagnóstico claro y modelos descargados en Docker.
 
+options(shiny.sanitize.errors = FALSE)
 source("R/prediction.R")
 
-VERSION_APP <- "HOTFIX6 castellano"
+VERSION_APP <- "HOTFIX7 castellano con modelos integrados en Docker"
 
 ui <- fluidPage(
   tags$head(
@@ -50,25 +51,40 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  values <- eventReactive(input$run, {
-    withProgress(message = "Cargando modelos y calculando...", value = 0, {
-      incProgress(0.2, detail = "Preparando datos")
-      donor <- donor_from_input(input)
-      incProgress(0.5, detail = "Descargando/cargando modelos")
-      models <- load_virtual_biopsy_models("models")
-      incProgress(0.9, detail = "Generando predicción")
-      predict_virtual_biopsy(models, donor)
+  resultado <- reactiveVal(NULL)
+  error_calc <- reactiveVal(NULL)
+  modelos_cache <- reactiveVal(NULL)
+
+  observeEvent(input$run, {
+    resultado(NULL)
+    error_calc(NULL)
+    withProgress(message = "Calculando...", value = 0, {
+      tryCatch({
+        incProgress(0.15, detail = "Preparando datos")
+        donor <- donor_from_input(input)
+        incProgress(0.45, detail = "Cargando modelos")
+        models <- modelos_cache()
+        if (is.null(models)) {
+          models <- load_virtual_biopsy_models("models")
+          modelos_cache(models)
+        }
+        incProgress(0.80, detail = "Generando predicción")
+        resultado(predict_virtual_biopsy(models, donor))
+      }, error = function(e) {
+        error_calc(conditionMessage(e))
+      })
     })
-  }, ignoreInit = TRUE)
+  })
 
   output$status <- renderUI({
-    if (input$run == 0) {
-      return(div(class = "ok-box", "Aplicación cargada. Introduce los datos del donante y pulsa ‘Calcular biopsia virtual’. La primera predicción puede tardar porque Render descarga y carga los modelos."))
+    if (!is.null(error_calc())) {
+      return(div(class = "warning-box", strong("Error: "), error_calc()))
     }
-    res <- tryCatch(values(), error = function(e) e)
-    if (inherits(res, "error")) {
-      div(class = "warning-box", strong("Error: "), conditionMessage(res))
-    } else if (!is.null(res$warnings) && length(res$warnings) > 0) {
+    if (is.null(resultado())) {
+      return(div(class = "ok-box", "Aplicación cargada. Introduce los datos del donante y pulsa ‘Calcular biopsia virtual’."))
+    }
+    res <- resultado()
+    if (!is.null(res$warnings) && length(res$warnings) > 0) {
       div(class = "warning-box", strong("Avisos: "), tags$ul(lapply(res$warnings, tags$li)))
     } else {
       div(class = "ok-box", "Modelo cargado y predicción generada correctamente.")
@@ -76,40 +92,43 @@ server <- function(input, output, session) {
   })
 
   output$prob_table <- renderTable({
-    req(input$run > 0)
-    res <- values()
-    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
-    format_probability_table(res)
+    req(!is.null(resultado()))
+    format_probability_table(resultado())
   }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
 
   output$summary_table <- renderTable({
-    req(input$run > 0)
-    res <- values()
-    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
-    format_summary_table(res)
+    req(!is.null(resultado()))
+    format_summary_table(resultado())
   }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
 
   output$radar_plot <- renderPlot({
-    req(input$run > 0)
-    res <- values()
-    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
-    plot_virtual_biopsy_radar(res)
+    req(!is.null(resultado()))
+    plot_virtual_biopsy_radar(resultado())
   })
 
   output$clinical_note <- renderUI({
-    req(input$run > 0)
-    res <- values()
-    validate(need(!inherits(res, "error"), "No se pudo generar la predicción."))
-    HTML(make_clinical_note(res))
+    req(!is.null(resultado()))
+    HTML(make_clinical_note(resultado()))
   })
 
   output$diagnostico <- renderText({
+    reqs <- required_model_files()
+    paths <- file.path("models", reqs)
+    estado <- vapply(paths, function(x) {
+      if (file.exists(x)) {
+        paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB")
+      } else {
+        paste0("FALTA — ", basename(x))
+      }
+    }, character(1))
     paste(
       paste("Versión activa:", VERSION_APP),
-      paste("URL de modelos:", get_model_base_url()),
+      paste("URL configurada de modelos:", get_model_base_url()),
       paste("Directorio de trabajo:", getwd()),
-      paste("Existe carpeta models:", dir.exists("models")),
-      paste("Archivos en models:", paste(list.files("models", recursive = TRUE), collapse = ", ")),
+      paste("Carpeta models presente:", dir.exists("models")),
+      "Estado de los modelos:",
+      paste(estado, collapse = "\n"),
+      paste("Archivos visibles en models:", paste(list.files("models", recursive = TRUE), collapse = ", ")),
       sep = "\n"
     )
   })
