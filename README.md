@@ -1,17 +1,23 @@
-# Sistema de biopsia virtual
+# Sistema de biopsia virtual renal
 
-Aplicación R Shiny en castellano para desplegar en Render. Los modelos se descargan desde GitHub Releases durante la construcción Docker.
+Aplicación R Shiny en castellano para desplegar en Render mediante Docker.
 
-Release de modelos:
+## Versión
+HOTFIX15 estable autocontenido.
+
+## Modelos
+Los modelos se descargan durante la construcción Docker desde:
+
 `https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1`
 
-## Despliegue
+Archivos esperados:
 
-1. Subir el contenido de este paquete al repositorio, no el ZIP.
-2. Confirmar que `Dockerfile` contiene `imagigato-Banff` y no `imaggigato-Banff`.
-3. En Render, usar `Manual Deploy -> Deploy latest commit` si el despliegue no comienza solo.
-4. Abrir `/ ?v=hotfix14` y revisar `Diagnóstico técnico`.
+- `cv_finalround_list_forSynapse.rds`
+- `ah_finalround_list_forSynapse.rds`
+- `IFTA_finalround_list_forSynapse.rds`
+- `Glo_finalround_list_forSynapse.rds`
 
-## Nota clínica
+## Nota importante
+Esta versión funciona en modo seguro para impedir que la aplicación se rompa por errores internos de los objetos `.rds`. La salida es orientativa y no sustituye la biopsia real ni el juicio clínico.
 
-Esta app es orientativa/investigacional y no sustituye la biopsia real, el juicio clínico ni los protocolos locales.
+GitHub Pages no sirve para esta app; debe desplegarse en Render, Posit Connect, shinyapps.io u otro servidor compatible con R Shiny.
