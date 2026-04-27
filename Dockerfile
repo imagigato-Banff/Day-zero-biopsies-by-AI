@@ -8,17 +8,24 @@ RUN R -e "install.packages(c('shiny','caret','caretEnsemble','randomForest','gbm
 
 COPY . /srv/shiny-server/
 
-ARG MODEL_BASE_URL=https://github.com/imaggigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1
-ENV MODEL_BASE_URL=${MODEL_BASE_URL}
-
-RUN mkdir -p /srv/shiny-server/models && \
-    curl -fL --retry 5 --retry-delay 3 -o /srv/shiny-server/models/cv_finalround_list_forSynapse.rds  ${MODEL_BASE_URL}/cv_finalround_list_forSynapse.rds && \
-    curl -fL --retry 5 --retry-delay 3 -o /srv/shiny-server/models/ah_finalround_list_forSynapse.rds  ${MODEL_BASE_URL}/ah_finalround_list_forSynapse.rds && \
-    curl -fL --retry 5 --retry-delay 3 -o /srv/shiny-server/models/IFTA_finalround_list_forSynapse.rds ${MODEL_BASE_URL}/IFTA_finalround_list_forSynapse.rds && \
-    curl -fL --retry 5 --retry-delay 3 -o /srv/shiny-server/models/Glo_finalround_list_forSynapse.rds  ${MODEL_BASE_URL}/Glo_finalround_list_forSynapse.rds && \
+# Descarga de modelos en tiempo de construcción. No depende de variables de Render.
+RUN set -eux; \
+    MODEL_BASE_URL='https://github.com/imaggigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1'; \
+    mkdir -p /srv/shiny-server/models; \
+    for f in \
+      cv_finalround_list_forSynapse.rds \
+      ah_finalround_list_forSynapse.rds \
+      IFTA_finalround_list_forSynapse.rds \
+      Glo_finalround_list_forSynapse.rds; do \
+        echo "Descargando modelo: ${f}"; \
+        curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 \
+          -A 'Mozilla/5.0' \
+          -o "/srv/shiny-server/models/${f}" \
+          "${MODEL_BASE_URL}/${f}"; \
+        test -s "/srv/shiny-server/models/${f}"; \
+      done; \
     ls -lh /srv/shiny-server/models
 
 RUN chown -R shiny:shiny /srv/shiny-server
-
 EXPOSE 3838
 CMD ["/usr/bin/shiny-server"]
