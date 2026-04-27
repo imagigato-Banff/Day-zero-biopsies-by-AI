@@ -1,0 +1,11 @@
+body { background: #f7f9fb; color: #1f2933; }
+.page-header { background: white; padding: 24px 32px; border-radius: 18px; margin: 18px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.page-header h1 { margin-top: 0; font-weight: 700; }
+.sidebar { background: white; border-radius: 18px; }
+.well { background: white; border: none; border-radius: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.btn-primary { width: 100%; margin-top: 12px; }
+.ok-box, .warning-box, .note-box { background: white; padding: 16px 18px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
+.ok-box { border-left: 5px solid #2e7d32; }
+.warning-box { border-left: 5px solid #f0ad4e; }
+.footer { color: #667085; font-size: 13px; padding: 16px 0 30px; }
+table { background: white; }
