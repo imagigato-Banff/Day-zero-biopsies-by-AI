@@ -1,23 +1,17 @@
-# Sistema de biopsia virtual — HOTFIX12
+# Sistema de biopsia virtual
 
-Aplicación Shiny en castellano.
+Aplicación R Shiny en castellano para desplegar en Render. Los modelos se descargan desde GitHub Releases durante la construcción Docker.
 
-## Corrección clave
-
-HOTFIX12 corrige el cierre de la función `server` en `app.R`. El despliegue anterior podía quedar en Render con:
-
-`The application exited during initialization`
-
-porque `app.R` estaba incompleto.
-
-## Modelos
-
-Los 4 modelos `.rds` se descargan durante la construcción Docker desde:
-
+Release de modelos:
 `https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1`
 
-## Verificación
+## Despliegue
 
-Al abrir la app debe verse:
+1. Subir el contenido de este paquete al repositorio, no el ZIP.
+2. Confirmar que `Dockerfile` contiene `imagigato-Banff` y no `imaggigato-Banff`.
+3. En Render, usar `Manual Deploy -> Deploy latest commit` si el despliegue no comienza solo.
+4. Abrir `/ ?v=hotfix14` y revisar `Diagnóstico técnico`.
 
-`Versión activa: HOTFIX12 castellano definitivo`
+## Nota clínica
+
+Esta app es orientativa/investigacional y no sustituye la biopsia real, el juicio clínico ni los protocolos locales.

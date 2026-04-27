@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: virtual-biopsy-system
+    name: day-zero-biopsies-by-ai
     env: docker
-    autoDeploy: true
-    healthCheckPath: /
+    plan: free
+    dockerfilePath: ./Dockerfile

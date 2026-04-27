@@ -1,14 +1,10 @@
 # Sistema de biopsia virtual - aplicación Shiny
-# HOTFIX12: corrige cierre del servidor Shiny y mantiene modelos integrados en Docker.
+# HOTFIX14: estable; no se cae aunque la predicción directa de los RDS falle.
 
 options(shiny.sanitize.errors = FALSE)
-tryCatch({
-  source("R/prediction.R", local = FALSE)
-}, error = function(e) {
-  stop("No se pudo cargar R/prediction.R: ", conditionMessage(e))
-})
+source("R/prediction.R", local = FALSE)
 
-VERSION_APP <- "HOTFIX12 castellano definitivo"
+VERSION_APP <- "HOTFIX14 castellano estable"
 
 ui <- fluidPage(
   tags$head(
@@ -40,7 +36,7 @@ ui <- fluidPage(
     mainPanel(width = 8,
       uiOutput("status"),
       tabsetPanel(
-        tabPanel("Resultados", br(), tableOutput("prob_table"), br(), tableOutput("summary_table")),
+        tabPanel("Resultados", br(), tableOutput("summary_table"), br(), tableOutput("prob_table")),
         tabPanel("Gráfico radar", br(), plotOutput("radar_plot", height = "520px")),
         tabPanel("Nota clínica", br(), uiOutput("clinical_note")),
         tabPanel("Diagnóstico técnico", br(), verbatimTextOutput("diagnostico"))
@@ -64,15 +60,15 @@ server <- function(input, output, session) {
     error_calc(NULL)
     withProgress(message = "Calculando...", value = 0, {
       tryCatch({
-        incProgress(0.15, detail = "Preparando datos")
+        incProgress(0.20, detail = "Preparando datos")
         donor <- donor_from_input(input)
-        incProgress(0.45, detail = "Cargando modelos")
+        incProgress(0.50, detail = "Cargando modelos")
         models <- modelos_cache()
         if (is.null(models)) {
           models <- load_virtual_biopsy_models("models")
           modelos_cache(models)
         }
-        incProgress(0.80, detail = "Generando predicción")
+        incProgress(0.85, detail = "Generando salida")
         resultado(predict_virtual_biopsy(models, donor))
       }, error = function(e) {
         error_calc(conditionMessage(e))
@@ -81,39 +77,29 @@ server <- function(input, output, session) {
   })
 
   output$status <- renderUI({
-    if (!is.null(error_calc())) return(div(class = "warning-box", strong("Error: "), error_calc()))
+    if (!is.null(error_calc())) return(div(class = "warning-box", strong("Aviso técnico: "), error_calc()))
     if (is.null(resultado())) return(div(class = "ok-box", "Aplicación cargada. Introduce los datos del donante y pulsa ‘Calcular biopsia virtual’."))
     res <- resultado()
-    if (!is.null(res$warnings) && length(res$warnings) > 0) {
-      div(class = "warning-box", strong("Avisos: "), tags$ul(lapply(res$warnings, tags$li)))
+    if (any(res$modos == "respaldo")) {
+      div(class = "warning-box",
+          strong("Modo seguro activado: "),
+          "los modelos están cargados, pero una o más predicciones directas no fueron compatibles con la estructura interna de los .rds. La app no se rompe; revise la nota clínica antes de interpretar resultados.")
     } else {
       div(class = "ok-box", "Modelo cargado y predicción generada correctamente.")
     }
   })
 
-  output$prob_table <- renderTable({ req(!is.null(resultado())); format_probability_table(resultado()) }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
   output$summary_table <- renderTable({ req(!is.null(resultado())); format_summary_table(resultado()) }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
+  output$prob_table <- renderTable({ req(!is.null(resultado())); format_probability_table(resultado()) }, digits = 3, striped = TRUE, bordered = TRUE, hover = TRUE)
   output$radar_plot <- renderPlot({ req(!is.null(resultado())); plot_virtual_biopsy_radar(resultado()) })
   output$clinical_note <- renderUI({ req(!is.null(resultado())); HTML(make_clinical_note(resultado())) })
 
   output$diagnostico <- renderText({
-    reqs <- c(
-      "cv_finalround_list_forSynapse.rds",
-      "ah_finalround_list_forSynapse.rds",
-      "IFTA_finalround_list_forSynapse.rds",
-      "Glo_finalround_list_forSynapse.rds"
-    )
-    paths <- file.path("models", reqs)
-    estado <- vapply(paths, function(x) {
-      if (file.exists(x)) {
-        paste0("OK — ", basename(x), " — ", round(file.info(x)$size / 1024 / 1024, 1), " MB")
-      } else {
-        paste0("FALTA — ", basename(x))
-      }
-    }, character(1))
+    st <- check_model_files("models")
+    estado <- paste0(ifelse(st$existe, "OK — ", "FALTA — "), st$archivo, ifelse(st$existe, paste0(" — ", st$tamano_mb, " MB"), ""))
     paste(
       paste("Versión activa:", VERSION_APP),
-      paste("URL de modelos integrada:", "https://github.com/imagigato-Banff/Day-zero-biopsies-by-AI/releases/download/models-v1"),
+      paste("URL de modelos integrada:", MODEL_BASE_URL_INTEGRADA),
       paste("Directorio de trabajo:", getwd()),
       paste("Carpeta models presente:", dir.exists("models")),
       "Estado de los modelos:",
@@ -122,7 +108,6 @@ server <- function(input, output, session) {
       sep = "\n"
     )
   })
-
 }
 
 shinyApp(ui, server)
